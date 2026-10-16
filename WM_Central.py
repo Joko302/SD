@@ -10,6 +10,13 @@ FORMAT = 'utf-8'
 FIN = "FIN"
 MAX_CONEXIONES = 2
 
+def bloquearWS(id_WS,diccionario):
+	if diccionario[id_WS]==False:
+		diccionario[id_WS]=True
+	else:
+		diccionario[id_WS]=False
+	
+
 def recibir_mensaje(cadena,socket):
 	if socket.recv(3)==cadena:
 		socket.recv(1)
@@ -22,7 +29,8 @@ def recibir_mensaje(cadena,socket):
 
 def handle_client(monitor, addr):
 	global estacionesRegistradas
-	global ventana
+	global ventana  
+	global on-offs
 	id_monitor=recibir_mensaje("WID",engine)
 	if id_monitor=="ERROR":
 		print("Mensaje mal formado")
@@ -36,16 +44,20 @@ def handle_client(monitor, addr):
 		lista=[]
 		lista.append(id_engine)
 		estacionesRegistradas.append(lista)
+		recargarPantalla(ventana,estacionesRegistradas,botones,on-offs)
 		switch=False
 		#todo mas tarde
 	
 	while True:
 		#todo
-		if False:
+		if on-offs[id_monitor]:
 			monitor.send("STP/0004/stop")
-			#todo
-		if False:
-			monitor.send("STP/0008/continue")
+			
+			on-offs[id_monitor]=False
+			
+		while on-offs[id_monitor]=True:
+			sleep(0.1)
+		monitor.send("STP/0008/continue")
 	
 	
 	
@@ -88,13 +100,16 @@ def handle_client(monitor, addr):
 '''def presentacion():
 	global estacionesRegistradas
 	while True:
-		print("Estado de la ")
+		 print("Estado de la ")
 		time.sleep(0.5)'''
-
+def loop():
+	global ventana
+	ventana.mainloop()
 def pantallaNueva(ventana,estacionesRegistradas):
 	for widget in ventana.winfo_children():
         widget.destroy()
 	for lista in estacionesRegistradas:
+		on-offs[lista[0]]=False
 		etiqueta_boton = tk.Label(
 			ventana, 
 			text=lista[0], 
@@ -102,15 +117,36 @@ def pantallaNueva(ventana,estacionesRegistradas):
 			cursor="hand2"  # Hace que el cursor cambie a una mano interactiva
 		)
 		etiqueta_boton.pack(pady=5)
-	ventana.mainloop()
+		etiqueta_boton.bind("<Button-1>",  lambda event: bloquearWS(lista[0],on-offs))
+	return on-offs;
+		
+	#ventana.mainloop()
 	#todo
-
+def recargarPantalla(ventana,estacionesRegistradas,on-offs)
+	diccionario.clear()
+	for widget in ventana.winfo_children():
+        widget.destroy()
+	for lista in estacionesRegistradas:
+		on-offs.setdefault(lista[0], False) 
+		botones[lista[0]]= tk.Label(
+			ventana, 
+			text=lista[0], 
+			font=("Arial", 8, "underline"), 
+			cursor="hand2"  # Hace que el cursor cambie a una mano interactiva
+		)
+		etiqueta_boton.pack(pady=5)
+		etiqueta_boton.bind("<Button-1>",  lambda event: bloquearWS(lista[0],on-offs))
+     
+    
 def start():
+	
 	ventana = tk.Tk()
 	ventana.title("WM_Central")
 	ventana.geometry("1000x500")
 	estacionesRegistradas = [[]]
-	pantallaNueva(ventana,estacionesRegistradas)
+	on-offs=pantallaNueva(ventana,estacionesRegistradas)
+	hilo = threading.Thread(target=loop)
+	hilo.start()
 	#hilo = threading.Thread(target=presentacion)
     server.listen()
     #print(f"[LISTENING] Servidor a la escucha en {SERVER}")
