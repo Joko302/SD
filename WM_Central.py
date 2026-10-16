@@ -31,6 +31,7 @@ def handle_client(monitor, addr):
 	global estacionesRegistradas
 	global ventana  
 	global on-offs
+	global botones
 	id_monitor=recibir_mensaje("WID",engine)
 	if id_monitor=="ERROR":
 		print("Mensaje mal formado")
@@ -105,23 +106,25 @@ def handle_client(monitor, addr):
 def loop():
 	global ventana
 	ventana.mainloop()
-def pantallaNueva(ventana,estacionesRegistradas):
-	for widget in ventana.winfo_children():
-        widget.destroy()
+def pantallaNueva(ventana,estacionesRegistradas,on-offs):
+	botones={}
+	
 	for lista in estacionesRegistradas:
-		on-offs[lista[0]]=False
-		etiqueta_boton = tk.Label(
+		on-offs[lista[0]] = False
+		botones[lista[0]] = tk.Label(
 			ventana, 
 			text=lista[0], 
 			font=("Arial", 8, "underline"), 
 			cursor="hand2"  # Hace que el cursor cambie a una mano interactiva
 		)
-		etiqueta_boton.pack(pady=5)
-		etiqueta_boton.bind("<Button-1>",  lambda event: bloquearWS(lista[0],on-offs))
-	return on-offs;
+		botones[lista[0]].config(fg="gray")
+		botones[lista[0]].pack(pady=5)
+		botones[lista[0]].bind("<Button-1>",  lambda event: bloquearWS(lista[0],on-offs))
+	return botones;
 		
 	#ventana.mainloop()
 	#todo
+	'''
 def recargarPantalla(ventana,estacionesRegistradas,on-offs)
 	diccionario.clear()
 	for widget in ventana.winfo_children():
@@ -134,17 +137,31 @@ def recargarPantalla(ventana,estacionesRegistradas,on-offs)
 			font=("Arial", 8, "underline"), 
 			cursor="hand2"  # Hace que el cursor cambie a una mano interactiva
 		)
+		etiqueta_boton.config(fg="gray")
 		etiqueta_boton.pack(pady=5)
 		etiqueta_boton.bind("<Button-1>",  lambda event: bloquearWS(lista[0],on-offs))
-     
-    
+   '''  
+
+def añadirElemento(ventana,elemento,on-offs,botones):
+	on-offs[elemento] = False
+		botones[elemento] = tk.Label(
+			ventana, 
+			text=elemento, 
+			font=("Arial", 8, "underline"), 
+			cursor="hand2"  # Hace que el cursor cambie a una mano interactiva
+		)
+		botones[elemento].config(fg="gray")
+		botones[elemento].pack(pady=5)
+		botones[elemento].bind("<Button-1>",  lambda event: bloquearWS(elemento,on-offs))
+
 def start():
 	
 	ventana = tk.Tk()
 	ventana.title("WM_Central")
 	ventana.geometry("1000x500")
 	estacionesRegistradas = [[]]
-	on-offs=pantallaNueva(ventana,estacionesRegistradas)
+	on-offs={}
+	botones=pantallaNueva(ventana,estacionesRegistradas,on-offs)
 	hilo = threading.Thread(target=loop)
 	hilo.start()
 	#hilo = threading.Thread(target=presentacion)
