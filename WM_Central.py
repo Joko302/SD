@@ -1,6 +1,7 @@
 import socket 
 import threading
 import tkinter as tk
+import sys
 
 HEADER = 64
 #SERVER = socket.gethostbyname(socket.gethostname())
@@ -18,47 +19,86 @@ def bloquearWS(id_WS,diccionario):
 	
 
 def recibir_mensaje(cadena,socket):
-	if socket.recv(3)==cadena:
-		socket.recv(1)
-		length=int(conn.recv(4))
-		socket.recv(1)
-		mensaje=socket.recv(length)
+	prueba=socket.recv(3).decode(FORMAT)
+	print(prueba)
+	if prueba==cadena:
+	#if socket.recv(3).decode(FORMAT)==cadena:
+		socket.recv(1).decode(FORMAT)
+		length=int(socket.recv(4).decode(FORMAT))
+		socket.recv(1).decode(FORMAT)
+		mensaje=socket.recv(length).decode(FORMAT)
 		return mensaje
 	else:
 		return "ERROR"
 
-def handle_client(monitor, addr):
-	global estacionesRegistradas
-	global ventana  
-	global on-offs
-	global botones
-	id_monitor=recibir_mensaje("WID",engine)
+def escucharMonitor(botones,id_monitor,monitor,ventana):
+	global switch
+	
+	while True:
+		mensaje=recibir_mensaje("WSA",monitor)
+		if mensaje == "KO":
+			print("rojo")
+			ventana.after(
+				0, lambda: botones[id_monitor].config(fg="red")
+			)
+			
+			switch=True
+		if mensaje == "OK":
+			print("verde")
+			ventana.after(
+				0, lambda: botones[id_monitor].config(fg="green")
+			)
+			switch=False
+		if mensaje=="ERROR":
+			print("Se ha escuchado incorrectamente al monitor")
+	
+
+def handle_client(monitor, addr,botones,estacionesRegistradas,onOffs,ventana):  
+	id_monitor=recibir_mensaje("WID",monitor)
 	if id_monitor=="ERROR":
 		print("Mensaje mal formado")
 		monitor.close()
 		return
+	
+
 	switch=True
+	i=0
 	for estacion in estacionesRegistradas:
 		if estacion[0] == id_monitor:
 			switch=False
+		
 	if switch:
 		lista=[]
-		lista.append(id_engine)
+		lista.append(id_monitor)
 		estacionesRegistradas.append(lista)
-		recargarPantalla(ventana,estacionesRegistradas,botones,on-offs)
+		ventana.after(
+				0, añadirElemento(ventana,id_monitor,onOffs,botones)
+			)
+		#añadirElemento(ventana,id_monitor,onOffs,botones)
 		switch=False
 		#todo mas tarde
-	
+	#botones[id_monitor].config(fg="green")
+	hilo = threading.Thread(target=escucharMonitor, args=(botones,id_monitor,monitor,ventana))
+	hilo.start()
 	while True:
-		#todo
-		if on-offs[id_monitor]:
-			monitor.send("STP/0004/stop")
-			
-			on-offs[id_monitor]=False
-			
-		while on-offs[id_monitor]=True:
+		
+		while switch==True:
 			sleep(0.1)
-		monitor.send("STP/0008/continue")
+		if onOffs[id_monitor]:
+			monitor.send("STP/0004/stop".encode(FORMAT))
+			ventana.after(
+				0, lambda: botones[id_monitor].config(fg="orange")
+			)
+			#botones[id_monitor].config(fg="red")
+
+			onOffs[id_monitor]=False
+			
+			while onOffs[id_monitor]==True:
+				sleep(0.1)
+			monitor.send("STP/0008/continue".encode(FORMAT))
+
+			botones[id_monitor].config(fg="green")
+
 	
 	
 	
@@ -103,14 +143,12 @@ def handle_client(monitor, addr):
 	while True:
 		 print("Estado de la ")
 		time.sleep(0.5)'''
-def loop():
-	global ventana
-	ventana.mainloop()
-def pantallaNueva(ventana,estacionesRegistradas,on-offs):
+
+def pantallaNueva(ventana,estacionesRegistradas,onOffs):
 	botones={}
 	
 	for lista in estacionesRegistradas:
-		on-offs[lista[0]] = False
+		onOffs[lista[0]] = False
 		botones[lista[0]] = tk.Label(
 			ventana, 
 			text=lista[0], 
@@ -119,18 +157,18 @@ def pantallaNueva(ventana,estacionesRegistradas,on-offs):
 		)
 		botones[lista[0]].config(fg="gray")
 		botones[lista[0]].pack(pady=5)
-		botones[lista[0]].bind("<Button-1>",  lambda event: bloquearWS(lista[0],on-offs))
+		botones[lista[0]].bind("<Button-1>",  lambda event: bloquearWS(lista[0],onOffs))
 	return botones;
 		
 	#ventana.mainloop()
 	#todo
 	'''
-def recargarPantalla(ventana,estacionesRegistradas,on-offs)
+def recargarPantalla(ventana,estacionesRegistradas,onOffs)
 	diccionario.clear()
 	for widget in ventana.winfo_children():
         widget.destroy()
 	for lista in estacionesRegistradas:
-		on-offs.setdefault(lista[0], False) 
+		onOffs.setdefault(lista[0], False) 
 		botones[lista[0]]= tk.Label(
 			ventana, 
 			text=lista[0], 
@@ -139,62 +177,87 @@ def recargarPantalla(ventana,estacionesRegistradas,on-offs)
 		)
 		etiqueta_boton.config(fg="gray")
 		etiqueta_boton.pack(pady=5)
-		etiqueta_boton.bind("<Button-1>",  lambda event: bloquearWS(lista[0],on-offs))
+		etiqueta_boton.bind("<Button-1>",  lambda event: bloquearWS(lista[0],onOffs))
    '''  
 
-def añadirElemento(ventana,elemento,on-offs,botones):
-	on-offs[elemento] = False
-		botones[elemento] = tk.Label(
-			ventana, 
-			text=elemento, 
-			font=("Arial", 8, "underline"), 
-			cursor="hand2"  # Hace que el cursor cambie a una mano interactiva
-		)
-		botones[elemento].config(fg="gray")
-		botones[elemento].pack(pady=5)
-		botones[elemento].bind("<Button-1>",  lambda event: bloquearWS(elemento,on-offs))
+def añadirElemento(ventana,elemento,onOffs,botones):
+	onOffs[elemento] = False
+	botones[elemento] = tk.Label(
+		ventana, 
+		text=elemento, 
+		font=("Arial", 8, "underline"), 
+		cursor="hand2"  # Hace que el cursor cambie a una mano interactiva
+	)
+	botones[elemento].config(fg="green")
+	botones[elemento].pack(pady=5)
+	botones[elemento].bind("<Button-1>",  lambda event: bloquearWS(elemento,onOffs))
 
 def start():
-	
 	ventana = tk.Tk()
 	ventana.title("WM_Central")
 	ventana.geometry("1000x500")
-	estacionesRegistradas = [[]]
-	on-offs={}
-	botones=pantallaNueva(ventana,estacionesRegistradas,on-offs)
-	hilo = threading.Thread(target=loop)
+	estacionesRegistradas = []
+	onOffs={}
+	botones=pantallaNueva(ventana,estacionesRegistradas,onOffs)
+	hilo = threading.Thread(target=start2,args=(estacionesRegistradas,onOffs,botones,ventana))
 	hilo.start()
+	ventana.mainloop()
+	'''
 	#hilo = threading.Thread(target=presentacion)
-    server.listen()
+	server.listen()
     #print(f"[LISTENING] Servidor a la escucha en {SERVER}")
-    CONEX_ACTIVAS = threading.active_count()-1
-    print(CONEX_ACTIVAS)
-    while True:
-        try:
-            conn, addr = server.accept()
-        except:
-            exit()
-        CONEX_ACTIVAS = threading.active_count()
-        if (CONEX_ACTIVAS <= MAX_CONEXIONES): 
-            thread = threading.Thread(target=handle_client, args=(conn, addr))
-            thread.start()
-            #print(f"[CONEXIONES ACTIVAS] {CONEX_ACTIVAS}")
-            #print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
-        else:
-            #print("OOppsss... DEMASIADAS CONEXIONES. ESPERANDO A QUE ALGUIEN SE VAYA")
-            conn.send("OOppsss... DEMASIADAS CONEXIONES. Tendrás que esperar a que alguien se vaya".encode(FORMAT))
-            conn.close()
-            CONEX_ACTUALES = threading.active_count()-1
-        
+	CONEX_ACTIVAS = threading.active_count()-1
+	print(CONEX_ACTIVAS)
+	while True:
+		try:
+			conn, addr = server.accept()
+		except:
+			exit()
+		CONEX_ACTIVAS = threading.active_count()
+		if (CONEX_ACTIVAS <= MAX_CONEXIONES): 
+			thread = threading.Thread(target=handle_client, args=(conn, addr))
+			thread.start()
+			#print(f"[CONEXIONES ACTIVAS] {CONEX_ACTIVAS}")
+			#print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
+		else:
+			#print("OOppsss... DEMASIADAS CONEXIONES. ESPERANDO A QUE ALGUIEN SE VAYA")
+			conn.send("OOppsss... DEMASIADAS CONEXIONES. Tendrás que esperar a que alguien se vaya".encode(FORMAT))
+			conn.close()
+			CONEX_ACTUALES = threading.active_count()-1
+        '''
+def start2(estacionesRegistradas,onOffs,botones,ventana):
+	
+	#hilo = threading.Thread(target=presentacion)
+	server.listen()
+	#print(f"[LISTENING] Servidor a la escucha en {SERVER}")
+	CONEX_ACTIVAS = threading.active_count()-1
+	print(CONEX_ACTIVAS)
+	while True:
+		try:
+			conn, addr = server.accept()
+		except:
+			exit()
+		CONEX_ACTIVAS = threading.active_count()
+		if (CONEX_ACTIVAS <= MAX_CONEXIONES): 
+			thread = threading.Thread(target=handle_client, args=(conn, addr,botones,estacionesRegistradas,onOffs,ventana))
+			thread.start()
+			#print(f"[CONEXIONES ACTIVAS] {CONEX_ACTIVAS}")
+			#print("CONEXIONES RESTANTES PARA CERRAR EL SERVICIO", MAX_CONEXIONES-CONEX_ACTIVAS)
+		else:
+			#print("OOppsss... DEMASIADAS CONEXIONES. ESPERANDO A QUE ALGUIEN SE VAYA")
+			conn.send("OOppsss... DEMASIADAS CONEXIONES. Tendrás que esperar a que alguien se vaya".encode(FORMAT))
+			conn.close()
+			CONEX_ACTUALES = threading.active_count()-1
 
 ######################### MAIN ##########################
 
 if  (len(sys.argv) == 4 ):
     PORT = sys.argv[1]
 else:
-	return
+	print("Parámetros incorrectos")
+	sys.exit()
     
-ADDR = (SERVER, PORT)
+ADDR = (SERVER, int(PORT))
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
 

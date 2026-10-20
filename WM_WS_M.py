@@ -1,6 +1,6 @@
 import socket 
 import threading
-
+import sys
 
 HEADER = 64
 FORMAT = 'utf-8'
@@ -61,38 +61,41 @@ def handle_client(conn, addr):
 		
 	'''#idea
 def recibir_mensaje(cadena,socket):
-	if socket.recv(3)==cadena:
-		socket.recv(1)
-		length=int(conn.recv(4))
-		socket.recv(1)
-		mensaje=socket.recv(length)
+	if socket.recv(3).decode(FORMAT)==cadena:
+		socket.recv(1).decode(FORMAT)
+		length=int(socket.recv(4))
+		socket.recv(1).decode(FORMAT)
+		mensaje=socket.recv(length).decode(FORMAT)
 		return mensaje
 	else:
-		return "ERROR
+		return "ERROR"
 def escucharCentral(central,engine):
 	if recibir_mensaje("STP",central)=="stop":
-		engine.send("STP/0004/stop")
+		print("Recibiendo mensaje para parar la WS, mandando mensaje a Engine")
+		engine.send("STP/0004/stop".encode(FORMAT))
 	if recibir_mensaje("STP",central)=="continue":
-		engine.send("STP/0008/continue")
+		print("Recibiendo mensaje para continuar la WS, mandando mensaje a Engine")
+		engine.send("STP/0008/continue".encode(FORMAT))
 
 def start():
-	central.send(f"WID/0008/{ID}")
+	central.send(f"WID/0008/{ID}".encode(FORMAT))
 	estado="OK"
-	engine.listen()
+	engineSocket.listen()
+	engine, addr = engineSocket.accept()
 	print("Comprobando estado de la máquina")
 	thread = threading.Thread(target=escucharCentral, args=(central,engine))
-    thread.start()
+	thread.start()
 	while True:
-	if engine.recv(3)=="WSA":
-		engine.recv(1)
-		length=int(conn.recv(4))
-		engine.recv(1)
-		mensaje=conn.recv(length)
-		print(f"Recibido mensaje: {mensaje}")
-		if mensaje!=estado:
-			central.send("WSA/0002/{estado}")
-			print("Mandando mendaje a central...")
-			estado=mensaje
+		if engine.recv(3).decode(FORMAT)=="WSA":
+			engine.recv(1).decode(FORMAT)
+			length=int(engine.recv(4).decode(FORMAT))
+			engine.recv(1).decode(FORMAT)
+			mensaje=engine.recv(length).decode(FORMAT)
+			print(f"Recibido mensaje: {mensaje}")
+			if mensaje!=estado:
+				central.send(f"WSA/0002/{mensaje}".encode(FORMAT))
+				print("Mandando mendaje a central...")
+				estado=mensaje
 		
 	#thread = threading.Thread(target=comprobarAvería, args=(engine,central))
     #thread.start()
@@ -125,22 +128,23 @@ def start():
 SERVER = socket.gethostbyname("0.0.0.0")
 
 if  (len(sys.argv) == 5):
-	PORT_MON = sys.argv[1]
+	PORT_MON = int(sys.argv[1])
 	
-    IP_Central = sys.argv[2]
-    PORT_Central = int(sys.argv[3])
-    ID=sys.argv[4]
-    ADDR_Central = (IP_Central, PORT_Central)
-    if len(ID) != 8:
+	IP_Central = sys.argv[2]
+	PORT_Central = int(sys.argv[3])
+	ID=sys.argv[4]
+	ADDR_Central = (IP_Central, PORT_Central)
+	if len(ID) != 8:
 		print("La ID se debe componer de 8 números")
-		return
-    central = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    central.connect(ADDR_Central)
+		sys.exit()
+	central = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	central.connect(ADDR_Central)
 else:
-	return
+	sys.exit()
+
 ADDR_Monitor = (IP, PORT_MON)
-engine = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-engine.bind(ADDR_Monitor)
+engineSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+engineSocket.bind(ADDR_Monitor)
 
 
 print("[STARTING] Servidor inicializándose...")
