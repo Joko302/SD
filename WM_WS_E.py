@@ -48,6 +48,13 @@ def blockEngine(client):
 
 print("****** WELCOME TO OUR BRILLIANT SD UA CURSO 2020/2021 SOCKET CLIENT ****")
 
+def regar(encender_evento):
+	while True:
+		if encender_evento.is_set():
+			#todo
+			encender_evento.clear()
+		
+
 if  (len(sys.argv) == 5):
 	SERVER = sys.argv[3]
 	PORT = int(sys.argv[4])
@@ -62,10 +69,17 @@ if  (len(sys.argv) == 5):
 	option=1
 	estado="OK"
 	thread = threading.Thread(target=OKorKO, args=(client,))
+	thread.daemon=True
 	thread.start()
 	thread2=threading.Thread(target=blockEngine, args=(client,))
+	thread2.daemon=True
 	thread2.start()
+	encender_riego=threading.Event()
+	threadRegar=threading.Thread(target=Regar, args=(encender_riego,),daemon=True)
+	threadRegar.start()
 	while True :
+		if option=="r":
+			encender_riego.set()
 		while option!="a":
 			print("Pulse A para averiar la WS")
 			try:
@@ -79,6 +93,7 @@ if  (len(sys.argv) == 5):
 				option="b"
 				break
 		while option!="a":
+			encender_riego.clear()
 			print("Pulse A para arreglar la WS")
 			try:
 				option=input()
