@@ -85,7 +85,9 @@ def start():
 	print("Comprobando estado de la máquina")
 	thread = threading.Thread(target=escucharCentral, args=(central,engine))
 	thread.start()
+	engine.send(f"WID/0008/{ID}".encode(FORMAT))
 	while True:
+		
 		if engine.recv(3).decode(FORMAT)=="WSA":
 			engine.recv(1).decode(FORMAT)
 			length=int(engine.recv(4).decode(FORMAT))

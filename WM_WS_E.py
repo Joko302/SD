@@ -2,12 +2,21 @@ import socket
 import threading
 import time
 import sys
-
+from confluent_kafka import Producer
 HEADER = 64
 PORT = 5050
 FORMAT = 'utf-8'
 FIN = "FIN"
 
+def recibir_mensaje(cadena,socket):
+	if socket.recv(3).decode(FORMAT)==cadena:
+		socket.recv(1).decode(FORMAT)
+		length=int(socket.recv(4))
+		socket.recv(1).decode(FORMAT)
+		mensaje=socket.recv(length).decode(FORMAT)
+		return mensaje
+	else:
+		return "ERROR"
 
 def send(msg):
     message = msg.encode(FORMAT)
@@ -48,23 +57,34 @@ def blockEngine(client):
 
 print("****** WELCOME TO OUR BRILLIANT SD UA CURSO 2020/2021 SOCKET CLIENT ****")
 
-def regar(encender_evento):
-	while True:
+def regar(encender_evento,producer,id):
+	while True:t{}
 		if encender_evento.is_set():
+			print("Regando 10ml")
+			producer.produce('peticionesRiego', value=f"{id}", callback=delivery_report)
 			#todo
 			encender_evento.clear()
 		
 
 if  (len(sys.argv) == 5):
+	KAFKA_IP=sys.argv[1]
+	KAFKA_PORT=sys.argv[2]	
+	producer = Producer({
+		'bootstrap.servers': f'{KAFKA_IP}:{KAFKA_PORT}'
+	})
 	SERVER = sys.argv[3]
-	PORT = int(sys.argv[4])
+	PORT = int(sys.argv[4]    
+)
 	ADDR = (SERVER, PORT)
     
 	block=False
     
 	client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	client.connect(ADDR)
-	print (f"Establecida conexión en [{ADDR}]")
+	
+	id=recibir_mensaje("WID",client)
+	
+	print (f"Establecida conexión en [{ADDR}] con la ID {id}")
 
 	option=1
 	estado="OK"
@@ -75,16 +95,15 @@ if  (len(sys.argv) == 5):
 	thread2.daemon=True
 	thread2.start()
 	encender_riego=threading.Event()
-	threadRegar=threading.Thread(target=Regar, args=(encender_riego,),daemon=True)
+	threadRegar=threading.Thread(target=Regar, args=(encender_riego,producer,id),daemon=True)
 	threadRegar.start()
 	while True :
-		if option=="r":
-			encender_riego.set()
+		print("Pulse A para averiar la WS o R para regar")
 		while option!="a":
-			print("Pulse A para averiar la WS")
 			try:
 				option=input()
-			except:
+			except:	
+
 				break;
 
 			if option=="a":
@@ -92,6 +111,8 @@ if  (len(sys.argv) == 5):
 				estado="KO"
 				option="b"
 				break
+			if option=="r":
+			encender_riego.set()
 		while option!="a":
 			encender_riego.clear()
 			print("Pulse A para arreglar la WS")
