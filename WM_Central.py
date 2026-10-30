@@ -180,6 +180,15 @@ def recargarPantalla(ventana,estacionesRegistradas,onOffs)
 		etiqueta_boton.bind("<Button-1>",  lambda event: bloquearWS(lista[0],onOffs))
    '''  
 
+def riego(peticionesRiego,botones):
+	while True:
+		msg = peticionesRiego.poll(timeout=1.0)
+		message_values = loads(msg.value().decode('utf-8')).split(":")
+		if message_value[0]==FIN:
+			#todo
+		else:
+			#todo
+
 def añadirElemento(ventana,elemento,onOffs,botones):
 	onOffs[elemento] = False
 	botones[elemento] = tk.Label(
@@ -199,6 +208,7 @@ def start():
 	estacionesRegistradas = []
 	onOffs={}
 	botones=pantallaNueva(ventana,estacionesRegistradas,onOffs)
+	peticionesRiegoHilo=threading.Thread(target=riego,args=(peticionesRiego,botones),daemon=True)
 	hilo = threading.Thread(target=start2,args=(estacionesRegistradas,onOffs,botones,ventana))
 	hilo.start()
 	ventana.mainloop()
@@ -253,10 +263,19 @@ def start2(estacionesRegistradas,onOffs,botones,ventana):
 
 if  (len(sys.argv) == 4 ):
     PORT = sys.argv[1]
+    IP_KAFKA = sys.argv[2]
+    PORT_KAFKA = sys.argv[3]
 else:
 	print("Parámetros incorrectos")
 	sys.exit()
-    
+consumer_config = {
+    'bootstrap.servers': f'{IP_KAFKA}:{PORT_KAFKA}',   # Kafka broker
+    'group.id': 'my-group',                   # Consumer group id
+    'auto.offset.reset': 'earliest',          # Start reading at the earliest offset
+    'enable.auto.commit': True                # Enable auto-commit of offsets
+}
+peticionesRiego = Consumer(consumer_config)
+peticionesRiego.subscribe(['peticionesRiego'])
 ADDR = (SERVER, int(PORT))
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)

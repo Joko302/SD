@@ -8,16 +8,6 @@ PORT = 5050
 FORMAT = 'utf-8'
 FIN = "FIN"
 
-def recibir_mensaje(cadena,socket):
-	if socket.recv(3).decode(FORMAT)==cadena:
-		socket.recv(1).decode(FORMAT)
-		length=int(socket.recv(4))
-		socket.recv(1).decode(FORMAT)
-		mensaje=socket.recv(length).decode(FORMAT)
-		return mensaje
-	else:
-		return "ERROR"
-
 def send(msg):
     message = msg.encode(FORMAT)
     msg_length = len(message)
@@ -57,13 +47,23 @@ def blockEngine(client):
 
 print("****** WELCOME TO OUR BRILLIANT SD UA CURSO 2020/2021 SOCKET CLIENT ****")
 
-def regar(encender_evento,producer,id):
-	while True:t{}
+def regar(encender_evento,producer,id_monitor):
+	regado=0;
+	while True:
 		if encender_evento.is_set():
+			
 			print("Regando 10ml")
-			producer.produce('peticionesRiego', value=f"{id}", callback=delivery_report)
+			regado=regado+10
+			print(f"Cantidad regada: {regado}")
+			producer.produce('peticionesRiego', value=f"REGAR:{id_monitor}", callback=delivery_report)
+			sleep(0.5)
 			#todo
-			encender_evento.clear()
+			#encender_evento.clear()
+			if not encender_evento.is_set():
+				producer.produce('peticionesRiego',value=f"FIN:{id_monitor}",)
+		else:
+			regado=0
+			sleep(0.5)
 		
 
 if  (len(sys.argv) == 5):
@@ -73,8 +73,7 @@ if  (len(sys.argv) == 5):
 		'bootstrap.servers': f'{KAFKA_IP}:{KAFKA_PORT}'
 	})
 	SERVER = sys.argv[3]
-	PORT = int(sys.argv[4]    
-)
+	PORT = int(sys.argv[4])
 	ADDR = (SERVER, PORT)
     
 	block=False
@@ -82,7 +81,7 @@ if  (len(sys.argv) == 5):
 	client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	client.connect(ADDR)
 	
-	id=recibir_mensaje("WID",client)
+	id_monitor=recibir_mensaje("WID",client)
 	
 	print (f"Establecida conexión en [{ADDR}] con la ID {id}")
 
@@ -95,7 +94,7 @@ if  (len(sys.argv) == 5):
 	thread2.daemon=True
 	thread2.start()
 	encender_riego=threading.Event()
-	threadRegar=threading.Thread(target=Regar, args=(encender_riego,producer,id),daemon=True)
+	threadRegar=threading.Thread(target=Regar, args=(encender_riego,producer,id_monitor),daemon=True)
 	threadRegar.start()
 	while True :
 		print("Pulse A para averiar la WS o R para regar")
@@ -105,13 +104,15 @@ if  (len(sys.argv) == 5):
 			except:	
 
 				break;
-
-			if option=="a":
+			if block:
+				print("Central ha bloqueado la WS")
+				option="b";
+			else if option=="a":
 				print("Enviando KO")
 				estado="KO"
 				option="b"
 				break
-			if option=="r":
+			else if option=="r" &&:
 			encender_riego.set()
 		while option!="a":
 			encender_riego.clear()
