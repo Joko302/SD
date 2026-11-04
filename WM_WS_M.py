@@ -70,12 +70,13 @@ def recibir_mensaje(cadena,socket):
 	else:
 		return "ERROR"
 def escucharCentral(central,engine):
-	if recibir_mensaje("STP",central)=="stop":
-		print("Recibiendo mensaje para parar la WS, mandando mensaje a Engine")
-		engine.send("STP/0004/stop".encode(FORMAT))
-	if recibir_mensaje("STP",central)=="continue":
-		print("Recibiendo mensaje para continuar la WS, mandando mensaje a Engine")
-		engine.send("STP/0008/continue".encode(FORMAT))
+	while True:
+		if recibir_mensaje("STP",central)=="stop":
+			print("Recibiendo mensaje para parar la WS, mandando mensaje a Engine")
+			engine.send("STP/0004/stop".encode(FORMAT))
+		if recibir_mensaje("STP",central)=="continue":
+			print("Recibiendo mensaje para continuar la WS, mandando mensaje a Engine")
+			engine.send("STP/0008/continue".encode(FORMAT))
 
 def start():
 	central.send(f"WID/0008/{ID}".encode(FORMAT))
@@ -83,7 +84,7 @@ def start():
 	engineSocket.listen()
 	engine, addr = engineSocket.accept()
 	print("Comprobando estado de la máquina")
-	thread = threading.Thread(target=escucharCentral, args=(central,engine))
+	thread = threading.Thread(target=escucharCentral, args=(central,engine),daemon=True)
 	thread.start()
 	engine.send(f"WID/0008/{ID}".encode(FORMAT))
 	while True:
@@ -142,6 +143,7 @@ if  (len(sys.argv) == 5):
 	central = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	central.connect(ADDR_Central)
 else:
+	print("Parámetros incorrectos")
 	sys.exit()
 
 ADDR_Monitor = (IP, PORT_MON)
