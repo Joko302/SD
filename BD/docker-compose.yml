@@ -1,0 +1,17 @@
+services:
+  postgres_db:
+    image: postgres:15
+    container_name: base-de-datos
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mis_ids
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_vol:/var/lib/postgresql/data
+
+volumes:
+  pgdata_vol:
+
