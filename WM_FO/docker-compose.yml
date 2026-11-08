@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  WM_FO:
+    build: .
+    container_name: Cliente
+    ports:
+      - "9092:9092"  # Aquí defines el mapeo de puertos una sola vez (PC_real:Contenedor)
+    restart: unless-stopped
+

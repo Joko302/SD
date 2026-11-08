@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  WM_WS_M:
+    build: ./WM_WS_M
+    container_name: Monitor
+    ports:
+      - "5000:5000"  # Aquí defines el mapeo de puertos una sola vez (PC_real:Contenedor)
+    restart: unless-stopped
+  WM_WS_E:
+    build: ./WM_WS_E
+    container_name: Engine
+    ports:
+      - "9092:9092"  # Aquí defines el mapeo de puertos una sola vez (PC_real:Contenedor)
+    restart: unless-stopped
