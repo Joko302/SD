@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY WM_Central.py /WM_Central/
 
 # 4. Indicar el comando que se ejecutará al arrancar el contenedor
-CMD ["python", "WM_Central.py"]
+CMD ["python", "WM_Central.py","5000", "localhost","9092"]
 
 
 EXPOSE 5000

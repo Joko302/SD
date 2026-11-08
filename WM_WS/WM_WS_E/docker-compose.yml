@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  wm_central:
+    build: .
+    container_name: Central
+    ports:
+      - "5000:5000"  # Aquí defines el mapeo de puertos una sola vez (PC_real:Contenedor)
+      - "9092:9092" 
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+    # En Linux, a veces necesitas el modo host para compartir la red gráfica
+    network_mode: "host"
+    restart: unless-stopped
+
