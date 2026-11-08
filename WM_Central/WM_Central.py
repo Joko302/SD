@@ -372,9 +372,9 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
 conexion = psycopg.connect(
 	host="localhost",
-	dbname="mi_tienda",
+	dbname="mis_ids",
 	user="admin",
-	password="mi_password_seguro",
+	password="password",
 	port="5432"
 )
 cursor = conexion.cursor()
